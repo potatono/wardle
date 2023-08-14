@@ -1,15 +1,18 @@
 using System.Drawing;
 
-namespace Wardle {
-    public class PathFinder {
-        
+namespace Wardle
+{
+    public class PathFinder
+    {
+
         private Map map;
-        private Map.Unit unit;
+        private Unit unit;
         private Dictionary<int, bool> added;
         public List<Point> Points;
         public int LookCount;
 
-        public PathFinder(Map map, Map.Unit unit) {
+        public PathFinder(Map map, Unit unit)
+        {
             this.map = map;
             this.unit = unit;
             this.added = new Dictionary<int, bool>();
@@ -17,11 +20,15 @@ namespace Wardle {
             this.LookCount = 0;
         }
 
-        public void Find() {
-            Find(unit.Position.X, unit.Position.Y, unit.Element.Speed);
+        public PathFinder(Unit unit) : this(Map.Current!, unit) { }
+
+        public void Find()
+        {
+            Find(unit.Position.X, unit.Position.Y, unit.Desc.Speed);
         }
 
-        public void Find(int x, int y, float moves) {
+        public void Find(int x, int y, float moves)
+        {
             int ofs = y % 2 == 0 ? 1 : -1;
 
             // Up Left / Up Right
@@ -37,14 +44,15 @@ namespace Wardle {
             Look(x, y + 1, moves);
         }
 
-        public void Look(int x, int y, float moves) {
+        public void Look(int x, int y, float moves)
+        {
             int key = y * map.Width + x;
             this.LookCount++;
 
             if (x < 0 || y < 0 || x >= map.Width || y >= map.Height)
                 return;
 
-            float cost = map.Terrain[y,x].Cost;
+            float cost = map.Terrain[y, x].Cost;
 
             if (cost == 0)
                 return;
@@ -53,7 +61,8 @@ namespace Wardle {
                 return;
 
             Find(x, y, moves - 1.0f / cost);
-            if (!added.ContainsKey(key)) {
+            if (!added.ContainsKey(key))
+            {
                 Points.Add(new Point(x, y));
                 added[key] = true;
             }

@@ -7,10 +7,9 @@ namespace Wardle
     {
         static void Main(string[] args)
         {
-            Map map = new Map();
-            map.Open("sample.map");
+            Map.OpenAsCurrent("sample.map");
 
-            ConsoleUI ui = new ConsoleUI(map);
+            ConsoleUI ui = new ConsoleUI();
             ui.Run();
         }
     }

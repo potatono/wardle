@@ -133,16 +133,26 @@ namespace Wardle {
         private Map map;
         private int posX;
         private int posY;
+        private Unit? lastSelected;
 
         public ConsoleUI(Map map) {
             this.consoleLayers = new ConsoleLayers(Enum.GetNames(typeof(Layer)).Length, map.Width * 2 + 2, map.Height);
             this.map = map;
             this.posX = map.Width / 2;
             this.posY = map.Height / 2;
+            this.lastSelected = null;
+        }
+
+        public ConsoleUI() : this(Map.Current!) { }
+
+
+        public Point Cursor
+        {
+            get { return new Point(posX, posY); }
         }
 
         public void WriteMapPoint(int x, int y) {
-            MapSpec.TerrainElement e = map.Terrain[y, x];
+            TerrainDesc e = map.Terrain[y, x];
 
             ConsoleLayer.Element el = consoleLayers.Get((int)Layer.Terrain, x * 2 + 1, y);
             el.ForegroundColor = e.Color;
@@ -164,6 +174,7 @@ namespace Wardle {
             //Console.Write(e.Character);
             //Console.BackgroundColor = ConsoleColor.Black;
         }
+
         public void WriteMap() {
 			Console.Clear();
 			for (int y=0; y<map.Height; y++) {
@@ -175,23 +186,23 @@ namespace Wardle {
 
         public void WriteUnits() {
             int n = 10;
-            foreach (Map.Unit unit in map.Units) {
+            foreach (Unit unit in map.Units) {
                 int x = unit.Position.X * 2 + (unit.Position.Y % 2) + 1;
                 int y = unit.Position.Y;
                 ConsoleLayer.Element el = consoleLayers.Get((int)Layer.Units, x, y);
-                el.ForegroundColor = unit.Element.Color;
-                el.Character = unit.Element.Character;
+                el.ForegroundColor = unit.Desc.Color;
+                el.Character = unit.Desc.Character;
                 consoleLayers.Write(x, y);
 
                 Console.SetCursorPosition(65, n++);
-                Console.Write(n + ":" + unit.Element.Character + " " + unit.Position.X + "," + unit.Position.Y);
+                Console.Write(n + ":" + unit.Desc.Character + " " + unit.Position.X + "," + unit.Position.Y);
                 //Console.SetCursorPosition(x, y);
                 //Console.ForegroundColor = unit.Element.Color;
                 //Console.Write(unit.Element.Character);
             }
         }
 
-        public MapSpec.TerrainElement GetMapAtCursorPosition(int x, int y) {
+        public TerrainDesc GetMapAtCursorPosition(int x, int y) {
             return map.Terrain[y, x/2];
         }
 
@@ -251,8 +262,8 @@ namespace Wardle {
             Console.SetCursorPosition(0, 0);
         }
 
-        public Map.Unit? GetSelectedUnit() {
-            foreach (Map.Unit unit in map.Units) {
+        public Unit? GetSelectedUnit() {
+            foreach (Unit unit in map.Units) {
                 if (unit.Position.X == posX && unit.Position.Y == posY)
                     return unit;
             }
@@ -261,26 +272,30 @@ namespace Wardle {
         }
         
         public void Select() {
-            Map.Unit? unit = GetSelectedUnit();
+            Unit? unit = GetSelectedUnit();
 
             consoleLayers.ClearWrite((int)Layer.Highlight);
 
-            if (unit != null) {
-                PathFinder pf = new PathFinder(map, unit);
-                pf.Find();
+            if (unit != null)
+            {
+                lastSelected = unit;
 
-                foreach (Point p in pf.Points) {
+                Point[] validMoves = unit.GetValidMoves();
+
+                foreach (Point p in validMoves)
+                {
                     consoleLayers.Get((int)Layer.Highlight, p.X * 2, p.Y).BackgroundColor = ConsoleColor.DarkGray;
                     consoleLayers.Write(p.X * 2, p.Y);
 
                     consoleLayers.Get((int)Layer.Highlight, p.X * 2 + 1, p.Y).BackgroundColor = ConsoleColor.DarkGray;
                     consoleLayers.Write(p.X * 2 + 1, p.Y);
-
-                    //map.Terrain[p.Y, p.X].BackgroundColor = ConsoleColor.DarkGray;
-                    //WriteMapPoint(p.X, p.Y);
                 }
+            }
+            else if (lastSelected != null && lastSelected.isValidMove(Cursor))
+            {
+                lastSelected.Move(Cursor);
 
-                //WriteUnits();
+                WriteUnits();
             }
         }
 
