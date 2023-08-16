@@ -82,9 +82,19 @@ namespace Wardle {
             return character;
         }
 
+        public char? Composite(Point p)
+        {
+            return Composite(p.X, p.Y);
+        }
+
         public ConsoleLayer.Element Get(int l, int x, int y)
         {
             return Layers[l].Elements[y, x];
+        }
+
+        public ConsoleLayer.Element Get(int l, Point p)
+        {
+            return Get(l, p.X, p.Y);
         }
 
         public void Clear(int l)
@@ -104,6 +114,17 @@ namespace Wardle {
             }
         }
 
+        public void ClearWrite(int l, int x, int y)
+        {
+            Layers[l].Clear(x, y);
+            Write(x, y);
+        }
+
+        public void ClearWrite(int l, Point p)
+        {
+            ClearWrite(l, p.X, p.Y);
+        }
+
         public void Write(int x, int y) {
             Console.SetCursorPosition(x, y);
             char? character = Composite(x, y);
@@ -111,6 +132,12 @@ namespace Wardle {
             if (character != null)
                 Console.Write(character);
         }
+
+        public void Write(Point p)
+        {
+            Write(p.X, p.Y);
+        }
+
 
         public void Write(int y) {
             Console.SetCursorPosition(0, y);
@@ -184,15 +211,32 @@ namespace Wardle {
             }
         }
 
+
+        public Point GetPointFromPosition(Point position)
+        {
+            return new Point(position.X * 2 + position.Y % 2 + 1, position.Y);
+        }
+
+
+        public void UnwriteUnit(Unit unit) 
+        {
+            consoleLayers.ClearWrite((int)Layer.Units, GetPointFromPosition(unit.Position));
+        }
+
+        public void WriteUnit(Unit unit)
+        {
+            Point p = GetPointFromPosition(unit.Position);
+            ConsoleLayer.Element el = consoleLayers.Get((int)Layer.Units, p);
+            el.ForegroundColor = unit.Desc.Color;
+            el.Character = unit.Desc.Character;
+            consoleLayers.Write(p);
+        }
+
         public void WriteUnits() {
             int n = 10;
+
             foreach (Unit unit in map.Units) {
-                int x = unit.Position.X * 2 + (unit.Position.Y % 2) + 1;
-                int y = unit.Position.Y;
-                ConsoleLayer.Element el = consoleLayers.Get((int)Layer.Units, x, y);
-                el.ForegroundColor = unit.Desc.Color;
-                el.Character = unit.Desc.Character;
-                consoleLayers.Write(x, y);
+                WriteUnit(unit);
 
                 Console.SetCursorPosition(65, n++);
                 Console.Write(n + ":" + unit.Desc.Character + " " + unit.Position.X + "," + unit.Position.Y);
@@ -293,9 +337,13 @@ namespace Wardle {
             }
             else if (lastSelected != null && lastSelected.isValidMove(Cursor))
             {
+                UnwriteUnit(lastSelected);
+
                 lastSelected.Move(Cursor);
 
-                WriteUnits();
+                WriteUnit(lastSelected);
+
+                lastSelected = null;
             }
         }
 

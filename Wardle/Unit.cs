@@ -29,7 +29,7 @@ namespace Wardle
 
 		public bool Move(Point p)
 		{
-			Point[] validMoves = GetValidMoves();
+			validMoves = GetValidMoves();
 			if (validMoves.Contains(p))
 			{
 				Position = p;
